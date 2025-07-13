@@ -8,7 +8,7 @@ import com.example.testrickandmorty.data.model.CharacterModel
 import com.example.testrickandmorty.databinding.ItemCharacterBinding
 
 class CharacterAdapter(
-    private val characters: List<CharacterModel>,
+    private val characters: MutableList<CharacterModel>,
     private val onClick: (CharacterModel) -> Unit
 ) : RecyclerView.Adapter<CharacterAdapter.CharacterViewHolder>() {
 
@@ -42,4 +42,10 @@ class CharacterAdapter(
     }
 
     override fun getItemCount(): Int = characters.size
+
+    fun updateData(newList: List<CharacterModel>) {
+        characters.clear()
+        characters.addAll(newList)
+        notifyDataSetChanged()
+    }
 }

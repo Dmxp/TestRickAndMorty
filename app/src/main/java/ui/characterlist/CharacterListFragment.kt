@@ -1,17 +1,23 @@
 package com.example.testrickandmorty.ui.characterlist
 
+import CharacterListViewModel
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.testrickandmorty.data.api.RetrofitInstance
+import androidx.recyclerview.widget.RecyclerView
 import com.example.testrickandmorty.data.model.CharacterModel
 import com.example.testrickandmorty.databinding.FragmentCharacterListBinding
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CharacterListFragment : Fragment() {
@@ -19,13 +25,17 @@ class CharacterListFragment : Fragment() {
     private var _binding: FragmentCharacterListBinding? = null
     private val binding get() = _binding!!
 
-    private val characters = mutableListOf<CharacterModel>()
-    private val allCharacters = mutableListOf<CharacterModel>()
     private lateinit var adapter: CharacterAdapter
 
+    // ✅ ViewModel с контекстом Application
+    private val viewModel: CharacterListViewModel by viewModels {
+        ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
+    }
+
+    private var searchJob: Job? = null
+
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentCharacterListBinding.inflate(inflater, container, false)
@@ -33,64 +43,64 @@ class CharacterListFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        adapter = CharacterAdapter(characters) { character ->
-            Toast.makeText(requireContext(), "Вы выбрали: ${character.name}", Toast.LENGTH_SHORT).show()
+        adapter = CharacterAdapter(mutableListOf()) { character ->
             val action = CharacterListFragmentDirections
                 .actionCharacterListFragmentToCharacterDetailFragment(character.id)
             findNavController().navigate(action)
         }
-
-        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
-        binding.recyclerView.adapter = adapter
-
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            loadCharacters()
+        viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.swipeRefreshLayout.isRefreshing = isLoading
         }
 
-        binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+
+        val layoutManager = GridLayoutManager(requireContext(), 2)
+        binding.recyclerView.layoutManager = layoutManager
+        binding.recyclerView.adapter = adapter
+
+        // 🔄 Пагинация
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                val visibleItemCount = layoutManager.childCount
+                val totalItemCount = layoutManager.itemCount
+                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+
+                val isBottom = firstVisibleItem + visibleItemCount >= totalItemCount
+                if (isBottom) viewModel.loadNextPage()
+            }
+        })
+
+        // 🔄 Swipe-to-refresh
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadInitialData()
+        }
+
+        // 🔍 Поиск с debounce
+        binding.searchView.setOnQueryTextListener(object :
+            androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                filterCharacters(newText)
+                searchJob?.cancel()
+                searchJob = MainScope().launch {
+                    delay(300)
+                    viewModel.applyFilter(newText ?: "")
+                }
                 return true
             }
         })
 
-        loadCharacters()
-    }
+        // 🔄 Восстановить текст поиска
+        binding.searchView.setQuery(viewModel.searchQuery.value ?: "", false)
 
-    private fun loadCharacters() {
-        binding.swipeRefreshLayout.isRefreshing = true
+        // 🔄 Наблюдение за данными
+        viewModel.characters.observe(viewLifecycleOwner, Observer { list ->
+            adapter.updateData(list)
+        })
 
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitInstance.api.getCharacters(1)
-                allCharacters.clear()
-                allCharacters.addAll(response.results)
-
-                characters.clear()
-                characters.addAll(response.results)
-                adapter.notifyDataSetChanged()
-
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Ошибка загрузки: ${e.message}", Toast.LENGTH_SHORT).show()
-            } finally {
-                binding.swipeRefreshLayout.isRefreshing = false
-            }
+        // Показывать / скрывать индикатор
+        viewModel.characters.observe(viewLifecycleOwner) {
+            binding.swipeRefreshLayout.isRefreshing = false
         }
-    }
-
-    private fun filterCharacters(query: String?) {
-        val filtered = if (query.isNullOrBlank()) {
-            allCharacters
-        } else {
-            allCharacters.filter {
-                it.name.contains(query.trim(), ignoreCase = true)
-            }
-        }
-        characters.clear()
-        characters.addAll(filtered)
-        adapter.notifyDataSetChanged()
     }
 
     override fun onDestroyView() {

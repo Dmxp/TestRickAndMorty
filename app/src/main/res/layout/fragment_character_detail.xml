@@ -70,7 +70,22 @@
             style="@style/DetailItem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+        <!-- Кнопка "Показать эпизоды" -->
+        <Button
+            android:id="@+id/showEpisodesButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show episodes"
+            android:layout_marginTop="8dp" />
 
+        <!-- Контейнер для списка эпизодов -->
+        <LinearLayout
+            android:id="@+id/episodeListLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="8dp" />
         <!-- URL
         <TextView android:id="@+id/urlTextView" style="@style/DetailItem" android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     id("org.jetbrains.kotlin.kapt")
     id("kotlin-parcelize")
+    id("kotlin-kapt")
     alias(libs.plugins.androidx.navigation.safeargs)
 }
 
@@ -70,4 +71,12 @@ dependencies {
     implementation(libs.navigation.ui)
 
     implementation(libs.swiperefreshlayout)
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    kapt(libs.room.compiler)
+
+    implementation(libs.gson)
+
+
 }
