@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">testRickAndMorty</string>
+    <string name="character_image">Character image</string>
+    <string name="error_loading_characters">Ошибка загрузки персонажей</string>
+    <string name="retry">Повторить</string>
+    <string name="no_characters_found">Персонажи не найдены</string>
+    <string name="character_status_format">%1$s - %2$s - %3$s</string>
+</resources>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Фото -->
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/character_image" />
+
+        <!-- Имя -->
+        <TextView
+            android:id="@+id/nameTextView"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <!-- Статус, Вид, Тип, Пол -->
+        <TextView
+            android:id="@+id/statusTextView"
+            style="@style/DetailItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/speciesTextView"
+            style="@style/DetailItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/typeTextView"
+            style="@style/DetailItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/genderTextView"
+            style="@style/DetailItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- Origin & Location -->
+        <TextView
+            android:id="@+id/originTextView"
+            style="@style/DetailItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/locationTextView"
+            style="@style/DetailItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- Episode count -->
+        <TextView
+            android:id="@+id/episodeCountTextView"
+            style="@style/DetailItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- URL
+        <TextView android:id="@+id/urlTextView" style="@style/DetailItem" android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+-->
+        <!-- Created -->
+        <TextView android:id="@+id/createdTextView" style="@style/DetailItem" android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</ScrollView>
