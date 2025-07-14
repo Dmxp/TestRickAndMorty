@@ -44,7 +44,7 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
                 currentPage++
                 isLastPage = newData.isEmpty()
 
-                // 🧠 Вместо прямого _characters.postValue:
+                // Вместо прямого _characters.postValue:
                 val query = _searchQuery.value ?: ""
                 val result = if (query.isBlank()) {
                     allCharacters
@@ -86,7 +86,7 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
                 applyFilter(_searchQuery.value ?: "")
             }
 
-            loadNextPage() // загрузим 1-ю партию (она может и не сработать, если уже загружено)
+            loadNextPage() // загрузим 1-ю партию
 
             _initialLoading.postValue(false)
         }

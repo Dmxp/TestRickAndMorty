@@ -27,7 +27,7 @@ class CharacterListFragment : Fragment() {
 
     private lateinit var adapter: CharacterAdapter
 
-    // ✅ ViewModel с контекстом Application
+    // ViewModel с контекстом Application
     private val viewModel: CharacterListViewModel by viewModels {
         ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
     }
@@ -52,12 +52,14 @@ class CharacterListFragment : Fragment() {
             binding.swipeRefreshLayout.isRefreshing = isLoading
         }
 
-
+        viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.initialProgressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
         val layoutManager = GridLayoutManager(requireContext(), 2)
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = adapter
 
-        // 🔄 Пагинация
+        // Пагинация
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
                 val visibleItemCount = layoutManager.childCount
@@ -69,12 +71,12 @@ class CharacterListFragment : Fragment() {
             }
         })
 
-        // 🔄 Swipe-to-refresh
+        // Swipe-to-refresh
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.loadInitialData()
         }
 
-        // 🔍 Поиск с debounce
+        // Поиск с debounce
         binding.searchView.setOnQueryTextListener(object :
             androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
@@ -89,10 +91,10 @@ class CharacterListFragment : Fragment() {
             }
         })
 
-        // 🔄 Восстановить текст поиска
+        // Восстановить текст поиска
         binding.searchView.setQuery(viewModel.searchQuery.value ?: "", false)
 
-        // 🔄 Наблюдение за данными
+        // Наблюдение за данными
         viewModel.characters.observe(viewLifecycleOwner, Observer { list ->
             adapter.updateData(list)
         })

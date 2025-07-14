@@ -36,6 +36,8 @@ class CharacterDetailFragment : Fragment() {
         (requireActivity() as AppCompatActivity).supportActionBar?.title = "Rick and Morty"
 
         val characterId = args.characterId
+        binding.detailProgressBar.visibility = View.VISIBLE
+        binding.contentScroll.visibility = View.GONE
 
         lifecycleScope.launch {
             try {
@@ -103,6 +105,10 @@ class CharacterDetailFragment : Fragment() {
 
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+            finally {
+                binding.detailProgressBar.visibility = View.GONE
+                binding.contentScroll.visibility = View.VISIBLE
             }
         }
     }
