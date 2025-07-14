@@ -15,6 +15,7 @@ import com.example.testrickandmorty.data.api.RetrofitInstance
 import com.example.testrickandmorty.data.model.Episode
 import com.example.testrickandmorty.databinding.FragmentCharacterDetailBinding
 import com.google.gson.Gson
+import com.google.gson.JsonElement
 import kotlinx.coroutines.launch
 
 class CharacterDetailFragment : Fragment() {
@@ -60,58 +61,47 @@ class CharacterDetailFragment : Fragment() {
                 val formattedDate = character.created.substringBefore("T")
                 binding.createdTextView.text = "Created: $formattedDate"
 
-                // Подготовка ID эпизодов
-                val episodeIds = character.episode.mapNotNull { it.substringAfterLast("/").toIntOrNull() }
-
-                var isExpanded = false
-
-                binding.showEpisodesButton.setOnClickListener {
-                    isExpanded = !isExpanded
-                    binding.episodeListLayout.visibility = if (isExpanded) View.VISIBLE else View.GONE
-                    binding.showEpisodesButton.text = if (isExpanded) "Hide episodes" else "Show episodes"
+                // Подгрузка эпизодов
+                val episodeIds = character.episode.mapNotNull {
+                    it.substringAfterLast("/").toIntOrNull()
                 }
 
                 if (episodeIds.isNotEmpty()) {
-                    try {
-                        val idsParam = episodeIds.joinToString(",")
-                        val response = RetrofitInstance.api.getMultipleEpisodes(idsParam)
+                    val idsParam = episodeIds.joinToString(",")
+                    //val episodes = RetrofitInstance.api.getMultipleEpisodes(idsParam)
+                    val episodes: List<Episode> = if (episodeIds.size == 1) {
+                        // Один эпизод
+                        listOf(RetrofitInstance.api.getSingleEpisode(episodeIds.first()))
+                    } else {
+                        // Несколько эпизодов
+                        RetrofitInstance.api.getMultipleEpisodes(episodeIds.joinToString(","))
+                    }
+                    var isExpanded = false
+                    binding.showEpisodesButton.setOnClickListener {
+                        isExpanded = !isExpanded
+                        binding.episodeListLayout.visibility = if (isExpanded) View.VISIBLE else View.GONE
+                        binding.showEpisodesButton.text = if (isExpanded) "Hide episodes" else "Show episodes"
+                    }
 
-                        if (response.isSuccessful) {
-                            val body = response.body()
-
-                            val episodes: List<Episode> = when (body) {
-                                is List<*> -> body.filterIsInstance<Episode>()
-                                is Map<*, *> -> {
-                                    val gson = Gson()
-                                    val json = gson.toJson(body)
-                                    listOf(gson.fromJson(json, Episode::class.java))
-                                }
-                                else -> emptyList()
-                            }
-
-                            episodes.forEach { episode ->
-                                val tv = TextView(requireContext()).apply {
-                                    text = "${episode.episode}: ${episode.name}"
-                                    setPadding(0, 8, 0, 8)
-                                    setTextColor(resources.getColor(android.R.color.black, null))
-                                }
-                                binding.episodeListLayout.addView(tv)
-                            }
+                    episodes.forEach { episode ->
+                        val tv = TextView(requireContext()).apply {
+                            text = "${episode.episode}: ${episode.name}"
+                            setPadding(0, 8, 0, 8)
+                            setTextColor(resources.getColor(android.R.color.black, null))
                         }
-                    } catch (e: Exception) {
-                        Toast.makeText(requireContext(), "Ошибка эпизодов: ${e.message}", Toast.LENGTH_SHORT).show()
+                        binding.episodeListLayout.addView(tv)
                     }
                 }
 
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-            finally {
+                Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
                 binding.detailProgressBar.visibility = View.GONE
                 binding.contentScroll.visibility = View.VISIBLE
             }
         }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

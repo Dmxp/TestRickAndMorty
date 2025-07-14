@@ -56,7 +56,6 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
                 _characters.postValue(result)
 
             } catch (_: Exception) {
-                // можно логировать
             } finally {
                 isLoading = false
             }

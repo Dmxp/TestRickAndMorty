@@ -3,6 +3,7 @@ package com.example.testrickandmorty.data.api
 import com.example.testrickandmorty.data.model.CharacterModel
 import com.example.testrickandmorty.data.model.CharacterResponse
 import com.example.testrickandmorty.data.model.Episode
+import com.google.gson.JsonElement
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -13,7 +14,9 @@ interface RickAndMortyApi {
     suspend fun getCharacters(@Query("page") page: Int): CharacterResponse
     @GET("character/{id}")
     suspend fun getCharacterById(@Path("id") id: Int): CharacterModel
+    @GET("episode/{id}")
+    suspend fun getSingleEpisode(@Path("id") id: Int): Episode
     @GET("episode/{ids}")
-    suspend fun getMultipleEpisodes(@Path("ids") ids: String): Response<Any>
+    suspend fun getMultipleEpisodes(@Path("ids") ids: String): List<Episode>
 
 }

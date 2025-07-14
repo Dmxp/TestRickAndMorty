@@ -48,9 +48,9 @@ class CharacterListFragment : Fragment() {
                 .actionCharacterListFragmentToCharacterDetailFragment(character.id)
             findNavController().navigate(action)
         }
-        viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.swipeRefreshLayout.isRefreshing = isLoading
-        }
+//        viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
+//            binding.swipeRefreshLayout.isRefreshing = isLoading
+//        }
 
         viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.initialProgressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
