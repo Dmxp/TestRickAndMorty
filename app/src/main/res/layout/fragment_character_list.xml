@@ -9,6 +9,11 @@
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+        <Button
+            android:id="@+id/filterButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Фильтр" />
 
         <!-- Поисковая строка -->
         <androidx.appcompat.widget.SearchView
@@ -31,8 +36,18 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:padding="8dp" />
+
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
+    <TextView
+        android:id="@+id/emptyTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Нет результатов"
+        android:gravity="center"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:visibility="gone"
+        android:layout_marginTop="32dp"/>
 
     <!-- Крутилка при первичной загрузке -->
     <ProgressBar

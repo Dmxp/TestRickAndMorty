@@ -14,8 +14,6 @@ import com.bumptech.glide.Glide
 import com.example.testrickandmorty.data.api.RetrofitInstance
 import com.example.testrickandmorty.data.model.Episode
 import com.example.testrickandmorty.databinding.FragmentCharacterDetailBinding
-import com.google.gson.Gson
-import com.google.gson.JsonElement
 import kotlinx.coroutines.launch
 
 class CharacterDetailFragment : Fragment() {
@@ -68,7 +66,6 @@ class CharacterDetailFragment : Fragment() {
 
                 if (episodeIds.isNotEmpty()) {
                     val idsParam = episodeIds.joinToString(",")
-                    //val episodes = RetrofitInstance.api.getMultipleEpisodes(idsParam)
                     val episodes: List<Episode> = if (episodeIds.size == 1) {
                         // Один эпизод
                         listOf(RetrofitInstance.api.getSingleEpisode(episodeIds.first()))
@@ -94,7 +91,7 @@ class CharacterDetailFragment : Fragment() {
                 }
 
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Ошибка", Toast.LENGTH_LONG).show()
             } finally {
                 binding.detailProgressBar.visibility = View.GONE
                 binding.contentScroll.visibility = View.VISIBLE

@@ -1,8 +1,10 @@
 package com.example.testrickandmorty.data.model
 
 import android.os.Parcelable
+import androidx.room.Entity
 import kotlinx.parcelize.Parcelize
 //модель для получения полная информация
+@Entity(tableName = "characters")
 @Parcelize
 data class CharacterModel(
     val id: Int,

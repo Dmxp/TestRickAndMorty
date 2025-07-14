@@ -18,5 +18,15 @@ interface RickAndMortyApi {
     suspend fun getSingleEpisode(@Path("id") id: Int): Episode
     @GET("episode/{ids}")
     suspend fun getMultipleEpisodes(@Path("ids") ids: String): List<Episode>
+    @GET("character")
+    suspend fun getCharactersFiltered(
+        @Query("name") name: String?,
+        @Query("status") status: String?,
+        @Query("gender") gender: String?,
+        @Query("species") species: String?,
+        @Query("type") type: String?,
+        @Query("page") page: Int
+    ): CharacterResponse
+
 
 }

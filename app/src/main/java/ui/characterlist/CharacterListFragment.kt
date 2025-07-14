@@ -5,20 +5,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.testrickandmorty.data.model.CharacterModel
+import com.example.testrickandmorty.data.model.CharacterFilter
 import com.example.testrickandmorty.databinding.FragmentCharacterListBinding
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import data.model.CharacterFilterBottomSheet
 
 class CharacterListFragment : Fragment() {
 
@@ -27,12 +22,9 @@ class CharacterListFragment : Fragment() {
 
     private lateinit var adapter: CharacterAdapter
 
-    // ViewModel с контекстом Application
     private val viewModel: CharacterListViewModel by viewModels {
         ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
     }
-
-    private var searchJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,21 +35,22 @@ class CharacterListFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // Адаптер
         adapter = CharacterAdapter(mutableListOf()) { character ->
             val action = CharacterListFragmentDirections
                 .actionCharacterListFragmentToCharacterDetailFragment(character.id)
             findNavController().navigate(action)
         }
-//        viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
-//            binding.swipeRefreshLayout.isRefreshing = isLoading
-//        }
 
-        viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.initialProgressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
+        // RecyclerView
         val layoutManager = GridLayoutManager(requireContext(), 2)
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = adapter
+
+        // Прогрессбар при первом запуске
+        viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.initialProgressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
 
         // Пагинация
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -66,43 +59,59 @@ class CharacterListFragment : Fragment() {
                 val totalItemCount = layoutManager.itemCount
                 val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
 
-                val isBottom = firstVisibleItem + visibleItemCount >= totalItemCount
-                if (isBottom) viewModel.loadNextPage()
+                if (firstVisibleItem + visibleItemCount >= totalItemCount) {
+                    viewModel.loadNextPage()
+                }
             }
         })
 
-        // Swipe-to-refresh
+        // Swipe to refresh
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.loadInitialData()
         }
 
-        // Поиск с debounce
+        // Поиск
         binding.searchView.setOnQueryTextListener(object :
             androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
-
             override fun onQueryTextChange(newText: String?): Boolean {
-                searchJob?.cancel()
-                searchJob = MainScope().launch {
-                    delay(300)
-                    viewModel.applyFilter(newText ?: "")
-                }
+                viewModel.applyFilter(newText ?: "")
                 return true
             }
         })
 
-        // Восстановить текст поиска
-        binding.searchView.setQuery(viewModel.searchQuery.value ?: "", false)
+        // Восстановление текста поиска
+        viewModel.searchQuery.observe(viewLifecycleOwner) { query ->
+            binding.searchView.setQuery(query, false)
+        }
 
-        // Наблюдение за данными
-        viewModel.characters.observe(viewLifecycleOwner, Observer { list ->
+        // Ожидание списка персонажей
+        viewModel.characters.observe(viewLifecycleOwner) { list ->
             adapter.updateData(list)
-        })
-
-        // Показывать / скрывать индикатор
-        viewModel.characters.observe(viewLifecycleOwner) {
             binding.swipeRefreshLayout.isRefreshing = false
         }
+
+        // Кнопка фильтра
+        binding.filterButton.setOnClickListener {
+            CharacterFilterBottomSheet(
+                initialName = viewModel.lastFilterName,
+                initialStatus = viewModel.lastFilterStatus,
+                initialGender = viewModel.lastFilterGender,
+                initialSpecies = viewModel.lastFilterSpecies,
+                initialType = viewModel.lastFilterType
+            ) { name, status, gender, species, type ->
+                viewModel.applyFilterWithApi(
+                    CharacterFilter(name, status, gender, species, type)
+                )
+            }.show(parentFragmentManager, "CharacterFilter")
+        }
+
+        viewModel.showEmptyState.observe(viewLifecycleOwner) { showEmpty ->
+            binding.emptyTextView.visibility = if (showEmpty) View.VISIBLE else View.GONE
+        }
+
+        // Загрузка данных при первом запуске
+        viewModel.loadInitialData()
     }
 
     override fun onDestroyView() {
