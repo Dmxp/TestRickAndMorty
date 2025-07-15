@@ -32,6 +32,15 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
     private val _showEmptyState = MutableLiveData(false)
     val showEmptyState: LiveData<Boolean> = _showEmptyState
 
+    private var isFilterOrSearchActive = false
+
+    var allowPagination: Boolean = true
+
+    private var isDataLoaded = false
+
+
+
+
     // Сохранение состояния фильтров
     var lastFilterName: String = ""
     var lastFilterStatus: String = ""
@@ -44,7 +53,7 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun loadNextPage() {
-        if (isLoading || isLastPage) return
+        if (!allowPagination || isLoading || isLastPage) return
         isLoading = true
 
         viewModelScope.launch {
@@ -73,18 +82,65 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
 
     fun applyFilter(query: String) {
         _searchQuery.value = query
-        val result = if (query.isBlank()) {
-            allCharacters
-        } else {
-            allCharacters.filter {
-                it.name.contains(query.trim(), ignoreCase = true)
+        isFilterOrSearchActive = query.isNotBlank() || currentFilter != null
+
+        currentPage = 1
+        isLastPage = false
+
+        // Подготовка фильтра, объединяющего текущее состояние
+        val updatedFilter = CharacterFilter(
+            name = query.ifBlank { null },
+            status = currentFilter?.status,
+            gender = currentFilter?.gender,
+            species = currentFilter?.species,
+            type = currentFilter?.type
+        )
+
+        currentFilter = updatedFilter // сохраняем как основной фильтр
+
+        allCharacters.clear() // очищаем перед новым запросом
+
+        viewModelScope.launch {
+            _initialLoading.postValue(true)
+            try {
+                val result = repository.getCharactersFromApi(currentPage, updatedFilter)
+
+                // Удаляем дубликаты по ID (можно по name, но id точнее)
+                val unique = result.distinctBy { it.id }
+
+                allCharacters.addAll(unique)
+                _characters.postValue(unique)
+                _showEmptyState.postValue(unique.isEmpty() && isFilterOrSearchActive)
+
+                currentPage++
+            } catch (e: Exception) {
+                val cached = repository.getCharactersFromCache()
+
+                val filtered = cached.filter {
+                    (updatedFilter.name == null || it.name.contains(updatedFilter.name, ignoreCase = true)) &&
+                            (updatedFilter.status == null || it.status.equals(updatedFilter.status, ignoreCase = true)) &&
+                            (updatedFilter.gender == null || it.gender.equals(updatedFilter.gender, ignoreCase = true)) &&
+                            (updatedFilter.species == null || it.species.contains(updatedFilter.species, ignoreCase = true)) &&
+                            (updatedFilter.type == null || it.type.contains(updatedFilter.type, ignoreCase = true))
+                }
+
+                val uniqueCached = filtered.distinctBy { it.id }
+
+                allCharacters.addAll(uniqueCached)
+                _characters.postValue(uniqueCached)
+                _showEmptyState.postValue(uniqueCached.isEmpty() && isFilterOrSearchActive)
+            } finally {
+                _initialLoading.postValue(false)
             }
         }
-        _characters.value = result
-        _showEmptyState.value = result.isEmpty()
     }
 
+
+
+
     fun loadInitialData() {
+        if (isDataLoaded) return
+
         _initialLoading.postValue(true)
         viewModelScope.launch {
             val cached = repository.getCharactersFromCache()
@@ -95,37 +151,18 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
             }
             loadNextPage()
             _initialLoading.postValue(false)
+            isDataLoaded = true
         }
     }
 
-    fun applyApiFilter(name: String?, status: String?, gender: String?, species: String?, type: String?) {
-        // Сохраняем фильтры
-        lastFilterName = name ?: ""
-        lastFilterStatus = status ?: ""
-        lastFilterGender = gender ?: ""
-        lastFilterSpecies = species ?: ""
-        lastFilterType = type ?: ""
 
-        viewModelScope.launch {
-            _initialLoading.postValue(true)
-            try {
-                val response = RetrofitInstance.api.getCharactersFiltered(
-                    name, status, gender, species, type, page = 1
-                )
-                allCharacters.clear()
-                allCharacters.addAll(response.results)
-                _characters.postValue(response.results)
-            } catch (_: Exception) {
-                // Ошибка фильтра
-            } finally {
-                _initialLoading.postValue(false)
-            }
-        }
-    }
     fun applyFilterWithApi(filter: CharacterFilter?) {
         currentFilter = filter
+        isFilterOrSearchActive = filter != null && listOf(
+            filter.name, filter.status, filter.gender, filter.species, filter.type
+        ).any { !it.isNullOrBlank() }
 
-        // Сохраняем для восстановления
+        // сохранение состояния фильтра (как было у тебя ранее)
         lastFilterName = filter?.name ?: ""
         lastFilterStatus = filter?.status ?: ""
         lastFilterGender = filter?.gender ?: ""
@@ -142,10 +179,9 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
                 val result = repository.getCharactersFromApi(currentPage, filter)
                 allCharacters.addAll(result)
                 _characters.postValue(result)
-                _showEmptyState.postValue(result.isEmpty())
+                _showEmptyState.postValue(result.isEmpty() && isFilterOrSearchActive)
                 currentPage++
             } catch (e: Exception) {
-                // Нет интернета или ошибка → работаем с кэшем
                 val cached = repository.getCharactersFromCache()
 
                 val filtered = cached.filter {
@@ -158,15 +194,10 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
 
                 allCharacters.addAll(filtered)
                 _characters.postValue(filtered)
-                _showEmptyState.postValue(filtered.isEmpty())
+                _showEmptyState.postValue(filtered.isEmpty() && isFilterOrSearchActive)
             } finally {
                 _initialLoading.postValue(false)
             }
         }
     }
-
-
-
-
-
 }

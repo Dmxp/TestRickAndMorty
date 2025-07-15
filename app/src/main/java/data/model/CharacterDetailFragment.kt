@@ -38,7 +38,7 @@ class CharacterDetailFragment : Fragment() {
         binding.detailProgressBar.visibility = View.VISIBLE
         binding.contentScroll.visibility = View.GONE
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val character = RetrofitInstance.api.getCharacterById(characterId)
 
@@ -91,10 +91,14 @@ class CharacterDetailFragment : Fragment() {
                 }
 
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Ошибка", Toast.LENGTH_LONG).show()
+                if (isAdded && _binding != null) {
+                    Toast.makeText(requireContext(), "Ошибка", Toast.LENGTH_SHORT).show()
+                }
             } finally {
-                binding.detailProgressBar.visibility = View.GONE
-                binding.contentScroll.visibility = View.VISIBLE
+                if (isAdded && _binding != null) {
+                    binding.detailProgressBar.visibility = View.GONE
+                    binding.contentScroll.visibility = View.VISIBLE
+                }
             }
         }
     }

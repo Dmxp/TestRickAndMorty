@@ -2,6 +2,7 @@ package com.example.testrickandmorty.ui.characterlist
 
 import CharacterListViewModel
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +20,8 @@ class CharacterListFragment : Fragment() {
 
     private var _binding: FragmentCharacterListBinding? = null
     private val binding get() = _binding!!
+
+    private var recyclerViewState: Parcelable? = null
 
     private lateinit var adapter: CharacterAdapter
 
@@ -41,11 +44,14 @@ class CharacterListFragment : Fragment() {
                 .actionCharacterListFragmentToCharacterDetailFragment(character.id)
             findNavController().navigate(action)
         }
-
         // RecyclerView
         val layoutManager = GridLayoutManager(requireContext(), 2)
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = adapter
+        // Наблюдение над действиями
+        viewModel.showEmptyState.observe(viewLifecycleOwner) { show ->
+            binding.emptyTextView.visibility = if (show) View.VISIBLE else View.GONE
+        }
 
         // Прогрессбар при первом запуске
         viewModel.initialLoading.observe(viewLifecycleOwner) { isLoading ->
@@ -89,7 +95,13 @@ class CharacterListFragment : Fragment() {
         viewModel.characters.observe(viewLifecycleOwner) { list ->
             adapter.updateData(list)
             binding.swipeRefreshLayout.isRefreshing = false
+
+            recyclerViewState?.let {
+                binding.recyclerView.layoutManager?.onRestoreInstanceState(it)
+                recyclerViewState = null
+            }
         }
+
 
         // Кнопка фильтра
         binding.filterButton.setOnClickListener {
@@ -113,6 +125,17 @@ class CharacterListFragment : Fragment() {
         // Загрузка данных при первом запуске
         viewModel.loadInitialData()
     }
+    override fun onPause() {
+        super.onPause()
+        viewModel.allowPagination = false
+        recyclerViewState = binding.recyclerView.layoutManager?.onSaveInstanceState()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.allowPagination = true
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
