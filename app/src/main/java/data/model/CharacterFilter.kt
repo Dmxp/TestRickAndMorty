@@ -1,5 +1,5 @@
 package com.example.testrickandmorty.data.model
-
+//Класс-фильтр
 data class CharacterFilter(
     val name: String? = null,
     val status: String? = null,

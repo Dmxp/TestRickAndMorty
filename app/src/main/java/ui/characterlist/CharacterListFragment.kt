@@ -73,7 +73,7 @@ class CharacterListFragment : Fragment() {
 
         // Swipe to refresh
         binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.loadInitialData()
+            viewModel.loadInitialData(forceRefresh = true)
         }
 
         // Поиск

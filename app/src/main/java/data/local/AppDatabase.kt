@@ -1,5 +1,5 @@
 package com.example.testrickandmorty.data.local
-
+//Класс с аннотацией @Database
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room

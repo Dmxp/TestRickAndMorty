@@ -1,5 +1,5 @@
 package com.example.testrickandmorty.ui.characterdetail
-
+//основная логика отображения детальной информации
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View

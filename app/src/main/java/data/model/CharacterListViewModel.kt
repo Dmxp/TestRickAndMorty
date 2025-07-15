@@ -8,7 +8,7 @@ import com.example.testrickandmorty.data.api.RetrofitInstance
 import com.example.testrickandmorty.data.model.CharacterFilter
 import com.example.testrickandmorty.data.model.CharacterModel
 import kotlinx.coroutines.launch
-
+//ViewModel, хранящий состояние
 class CharacterListViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = CharacterRepository(application)
@@ -36,7 +36,7 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
 
     var allowPagination: Boolean = true
 
-    private var isDataLoaded = false
+    private var isInitialLoadStarted = false
 
 
     // Сохранение состояния фильтров
@@ -45,10 +45,6 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
     var lastFilterGender: String = ""
     var lastFilterSpecies: String = ""
     var lastFilterType: String = ""
-
-    init {
-        loadInitialData()
-    }
 
     fun loadNextPage() {
         if (!allowPagination || isLoading || isLastPage) return
@@ -77,7 +73,7 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-
+    //запрос для поисковой строки
     fun applyFilter(query: String) {
         _searchQuery.value = query
         isFilterOrSearchActive = query.isNotBlank()
@@ -95,24 +91,35 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
     }
 
 
-    fun loadInitialData() {
-        if (isDataLoaded) return
+    fun loadInitialData(forceRefresh: Boolean = false) {
+        if (isInitialLoadStarted && !forceRefresh) return
 
+        isInitialLoadStarted = true
         _initialLoading.postValue(true)
+
         viewModelScope.launch {
-            val cached = repository.getCharactersFromCache()
-            if (cached.isNotEmpty()) {
-                allCharacters.clear()
-                allCharacters.addAll(cached)
-                applyFilter(_searchQuery.value ?: "")
+            try {
+                if (forceRefresh) {
+                    currentPage = 1
+                    isLastPage = false
+                    allCharacters.clear()
+                }
+
+                val cached = repository.getCharactersFromCache()
+                if (cached.isNotEmpty() && !forceRefresh) {
+                    allCharacters.clear()
+                    allCharacters.addAll(cached)
+                    applyFilter(_searchQuery.value ?: "")
+                }
+
+                loadNextPage()
+            } finally {
+                _initialLoading.postValue(false)
             }
-            loadNextPage()
-            _initialLoading.postValue(false)
-            isDataLoaded = true
         }
     }
 
-
+//запрос для фильтра
     fun applyFilterWithApi(filter: CharacterFilter?) {
         currentFilter = filter
         isFilterOrSearchActive = filter != null && listOf(

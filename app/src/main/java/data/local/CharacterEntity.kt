@@ -1,5 +1,5 @@
 package com.example.testrickandmorty.data.local
-
+//Модель базы данных
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 

@@ -1,5 +1,5 @@
 package com.example.testrickandmorty.data.local
-
+//Файл, где хранятся функции
 import com.example.testrickandmorty.data.model.CharacterModel
 import com.example.testrickandmorty.data.model.LocationInfo
 

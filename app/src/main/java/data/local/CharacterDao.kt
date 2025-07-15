@@ -1,5 +1,5 @@
 package com.example.testrickandmorty.data.local
-
+//Интерфейс DAO с функциями для работы с кэшом
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy

@@ -1,5 +1,5 @@
 package com.example.testrickandmorty.data
-
+//Класс-репозиторий: связывает Retrofit + Room
 import android.content.Context
 import com.example.testrickandmorty.data.api.RetrofitInstance
 import com.example.testrickandmorty.data.local.AppDatabase
