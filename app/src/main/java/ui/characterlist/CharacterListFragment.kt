@@ -127,15 +127,8 @@ class CharacterListFragment : Fragment() {
     }
     override fun onPause() {
         super.onPause()
-        viewModel.allowPagination = false
         recyclerViewState = binding.recyclerView.layoutManager?.onSaveInstanceState()
     }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.allowPagination = true
-    }
-
 
     override fun onDestroyView() {
         super.onDestroyView()

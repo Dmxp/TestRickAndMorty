@@ -39,8 +39,6 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
     private var isDataLoaded = false
 
 
-
-
     // Сохранение состояния фильтров
     var lastFilterName: String = ""
     var lastFilterStatus: String = ""
@@ -82,60 +80,19 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
 
     fun applyFilter(query: String) {
         _searchQuery.value = query
-        isFilterOrSearchActive = query.isNotBlank() || currentFilter != null
+        isFilterOrSearchActive = query.isNotBlank()
 
-        currentPage = 1
-        isLastPage = false
-
-        // Подготовка фильтра, объединяющего текущее состояние
-        val updatedFilter = CharacterFilter(
-            name = query.ifBlank { null },
-            status = currentFilter?.status,
-            gender = currentFilter?.gender,
-            species = currentFilter?.species,
-            type = currentFilter?.type
-        )
-
-        currentFilter = updatedFilter // сохраняем как основной фильтр
-
-        allCharacters.clear() // очищаем перед новым запросом
-
-        viewModelScope.launch {
-            _initialLoading.postValue(true)
-            try {
-                val result = repository.getCharactersFromApi(currentPage, updatedFilter)
-
-                // Удаляем дубликаты по ID (можно по name, но id точнее)
-                val unique = result.distinctBy { it.id }
-
-                allCharacters.addAll(unique)
-                _characters.postValue(unique)
-                _showEmptyState.postValue(unique.isEmpty() && isFilterOrSearchActive)
-
-                currentPage++
-            } catch (e: Exception) {
-                val cached = repository.getCharactersFromCache()
-
-                val filtered = cached.filter {
-                    (updatedFilter.name == null || it.name.contains(updatedFilter.name, ignoreCase = true)) &&
-                            (updatedFilter.status == null || it.status.equals(updatedFilter.status, ignoreCase = true)) &&
-                            (updatedFilter.gender == null || it.gender.equals(updatedFilter.gender, ignoreCase = true)) &&
-                            (updatedFilter.species == null || it.species.contains(updatedFilter.species, ignoreCase = true)) &&
-                            (updatedFilter.type == null || it.type.contains(updatedFilter.type, ignoreCase = true))
-                }
-
-                val uniqueCached = filtered.distinctBy { it.id }
-
-                allCharacters.addAll(uniqueCached)
-                _characters.postValue(uniqueCached)
-                _showEmptyState.postValue(uniqueCached.isEmpty() && isFilterOrSearchActive)
-            } finally {
-                _initialLoading.postValue(false)
+        val result = if (query.isBlank()) {
+            allCharacters
+        } else {
+            allCharacters.filter {
+                it.name.contains(query.trim(), ignoreCase = true)
             }
         }
+
+        _characters.value = result
+        _showEmptyState.value = result.isEmpty() && isFilterOrSearchActive
     }
-
-
 
 
     fun loadInitialData() {
@@ -162,7 +119,7 @@ class CharacterListViewModel(application: Application) : AndroidViewModel(applic
             filter.name, filter.status, filter.gender, filter.species, filter.type
         ).any { !it.isNullOrBlank() }
 
-        // сохранение состояния фильтра (как было у тебя ранее)
+        // сохранение состояния фильтра
         lastFilterName = filter?.name ?: ""
         lastFilterStatus = filter?.status ?: ""
         lastFilterGender = filter?.gender ?: ""
